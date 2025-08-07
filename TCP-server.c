@@ -16,20 +16,22 @@
 int main(){
     // initializing WinSock
     WSADATA wsaDATA;
-    
+
     // initiates use of the Winsock DLL by a process
     if (WSAStartup(MAKEWORD(2,2), &wsaDATA) != 0)
     {
-        error("WSAStartup failed with error: %d\n", WSAGetLastError());
+        error("WSAStartup failed with error: %d", WSAGetLastError());
         return EXIT_FAILURE;
     }
 
     //Confirm that the WinSock DLL supports 2.2.
     if (LOBYTE(wsaDATA.wVersion)!=2 || HIBYTE(wsaDATA.wVersion)!=2)
     {
-
+        error("Could not find a usable version of Winsock.dll");
+        WSACleanup();
         return EXIT_FAILURE;
     }
+    okay("The Winsock 2.2 dll was found");
     
 
     // cleanup
