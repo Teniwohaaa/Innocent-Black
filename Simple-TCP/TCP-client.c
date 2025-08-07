@@ -1,4 +1,4 @@
-// server TCP
+// client TCP
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,20 +9,14 @@
 #pragma comment(lib, "ws2_32.lib") 
 
 #define PORT 9090
-#define BUFFER_SIZE 1024
-
-#define okay(msg,...) printf("[+]" msg "\n", ##__VA_ARGS__)
-#define error(msg,...) printf("[-]" msg "\n", ##__VA_ARGS__)
-#define info(msg,...) printf("[*]" msg "\n", ##__VA_ARGS__)
 
 int main(){
     // initializing WinSock and variables 
     WSADATA wsaDATA;
-    int server_fd, new_socket;
-    struct sockaddr_in address;
-    char buffer[BUFFER_SIZE] = {0};
-    int opt = 1;
-    socklen_t addrlen = sizeof(address);
+    int sock;
+    struct sockaddr_in serv_addr;
+    char buffer[1024] = {0};
+    char *msg = "Meow, Server ₍^. .^₎⟆ !";
 
     // initiates use of the Winsock DLL by a process
     if (WSAStartup(MAKEWORD(2,2), &wsaDATA) != 0)
@@ -39,27 +33,20 @@ int main(){
         return EXIT_FAILURE;
     }
     okay("The Winsock 2.2 dll was found");
-    
-    //step 1: create a socket 
-    server_fd = socket(AF_INET,SOCK_STREAM,0);
-    if (server_fd == 0)
+
+    // step 1: Create a socket
+    sock = socket(AF_INET,SOCK_STREAM,0);
+     if (sock == INVALID_SOCKET)
     {
         error("socket creation failed (INVALID_SOCKET), error:%d",WSAGetLastError());
         WSACleanup();
         return EXIT_FAILURE;
     }
     okay("Created the Socket");
-    // step 2: setting socket options
-    setsockopt(server_fd,SOL_SOCKET,SO_REUSEADDR,&opt,sizeof(opt));
-    // step 3: bind
-    // step 4: listen
-    // step 5: accept
-    // step 6: reply
-    // step 7: close
-    close(new_socket);
-    close(server_fd);
-    // cleanup
-     WSACleanup();
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(PORT);
+    inet_pton();
+    // step 2: Connect to the server
 
-   return EXIT_SUCCESS; 
+    return EXIT_FAILURE;
 }
