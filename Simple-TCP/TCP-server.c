@@ -52,11 +52,34 @@ int main(){
     // step 2: setting socket options
     setsockopt(server_fd,SOL_SOCKET,SO_REUSEADDR,&opt,sizeof(opt));
     // step 3: bind
-    
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = INADDR_ANY; // Bind to any address
+    address.sin_port = htons(PORT);
+    int Result = bind(server_fd, (struct sockaddr *)&address, sizeof(address));
+    if (Result == SOCKET_ERROR)
+    {
+        error("Bind failed with error: %d", WSAGetLastError());
+        close(server_fd);
+        WSACleanup();
+        return EXIT_FAILURE;
+    }
+    okay("Socket bound to port %d", PORT);
     // step 4: listen
-    // step 5: accept
-    // step 6: reply
-    // step 7: close
+    listen(server_fd, 3); // Listen for incoming connections, max 3 queued connections
+    // step 5: accept and reply
+    new_socket = accept(server_fd,(struct sockaddr*)&address,addrlen);
+    if (new_socket == INVALID_SOCKET)
+    {
+        error("Accept failed with error: %d", WSAGetLastError());
+        close(server_fd);
+        WSACleanup();
+        return EXIT_FAILURE;
+    }
+    read(new_socket, buffer, BUFFER_SIZE);
+    okay("Client message: %s", buffer);
+    send(new_socket, "Meow, Client ₍^. .^₎⟆ !", strlen("Meow, Client ₍^. .^₎⟆ !"), 0);
+    
+    // step 6: close
     close(new_socket);
     close(server_fd);
     // cleanup
