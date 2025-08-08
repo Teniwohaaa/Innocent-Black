@@ -9,6 +9,9 @@
 #pragma comment(lib, "ws2_32.lib") 
 
 #define PORT 9090
+#define okay(msg,...) printf("[+]" msg "\n", ##__VA_ARGS__)
+#define error(msg,...) printf("[-]" msg "\n", ##__VA_ARGS__)
+#define info(msg,...) printf("[*]" msg "\n", ##__VA_ARGS__)
 
 int main(){
     // initializing WinSock and variables 
@@ -43,10 +46,35 @@ int main(){
         return EXIT_FAILURE;
     }
     okay("Created the Socket");
+    
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(PORT);
-    inet_pton();
-    // step 2: Connect to the server
+    int Result = inet_pton(AF_INET,"127.0.0.1",&serv_addr.sin_addr);
 
+    if (Result == -1)
+    {
+        error("Failed to performs the conversion of the IP address string, error:%d",WSAGetLastError());
+        close(sock);
+        WSACleanup();
+        return EXIT_FAILURE;
+    }
+    // step 2: Connect to the server
+    Result = connect(sock,(struct sockaddr *)&serv_addr,sizeof(serv_addr)); 
+    if (Result == SOCKET_ERROR)
+    {
+        error("Connection failed, error:%d",WSAGetLastError());
+        close(sock);
+        WSACleanup();
+        return EXIT_FAILURE;
+    }
+    okay("Connected to the server");
+    
+    // step 3: recv and send
+    send(sock,msg,strlen(msg),0);
+    recv(sock,&buffer,1024,0);
+    okay("Server reply %s",buffer);
+
+    close(sock);
+    WSACleanup();
     return EXIT_FAILURE;
 }

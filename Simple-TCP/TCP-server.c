@@ -52,6 +52,7 @@ int main(){
     // step 2: setting socket options
     setsockopt(server_fd,SOL_SOCKET,SO_REUSEADDR,&opt,sizeof(opt));
     // step 3: bind
+    
     // step 4: listen
     // step 5: accept
     // step 6: reply
