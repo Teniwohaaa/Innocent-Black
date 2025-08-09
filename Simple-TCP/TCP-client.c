@@ -19,7 +19,7 @@ int main(){
     int sock;
     struct sockaddr_in serv_addr;
     char buffer[1024] = {0};
-    char *msg = "Meow, Server ₍^. .^₎⟆ !";
+    char *msg = "Meow, Master ₍^. .^₎⟆ !";
 
     // initiates use of the Winsock DLL by a process
     if (WSAStartup(MAKEWORD(2,2), &wsaDATA) != 0)
@@ -46,7 +46,7 @@ int main(){
         return EXIT_FAILURE;
     }
     okay("Created the Socket");
-    
+
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(PORT);
     int Result = inet_pton(AF_INET,"127.0.0.1",&serv_addr.sin_addr);
@@ -54,7 +54,7 @@ int main(){
     if (Result == -1)
     {
         error("Failed to performs the conversion of the IP address string, error:%d",WSAGetLastError());
-        close(sock);
+        closesocket(sock);
         WSACleanup();
         return EXIT_FAILURE;
     }
@@ -63,7 +63,7 @@ int main(){
     if (Result == SOCKET_ERROR)
     {
         error("Connection failed, error:%d",WSAGetLastError());
-        close(sock);
+        closesocket(sock);
         WSACleanup();
         return EXIT_FAILURE;
     }
@@ -71,10 +71,10 @@ int main(){
     
     // step 3: recv and send
     send(sock,msg,strlen(msg),0);
-    recv(sock,&buffer,1024,0);
-    okay("Server reply %s",buffer);
+    recv(sock, buffer, 1024, 0);
+    okay("Daddy's reply: %s",buffer);
 
-    close(sock);
+    closesocket(sock);
     WSACleanup();
     return EXIT_FAILURE;
 }
