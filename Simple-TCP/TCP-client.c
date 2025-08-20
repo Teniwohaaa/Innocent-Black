@@ -49,7 +49,7 @@ int main(){
 
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(PORT);
-    int Result = inet_pton(AF_INET,"127.0.0.1",&serv_addr.sin_addr);
+        int Result = InetPton(AF_INET, "127.0.0.1", &serv_addr.sin_addr);
 
     if (Result == -1)
     {
