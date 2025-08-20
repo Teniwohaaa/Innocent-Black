@@ -57,7 +57,7 @@ DWORD WINAPI serverSend(LPVOID lpParam){
 int main(){
     // variables 
     WSADATA wsaDATA;
-    int server_fd = 0, new_socket = 0;
+    SOCKET server_fd = INVALID_SOCKET;
     struct sockaddr_in address;
     int opt = 1;
     socklen_t addrlen = sizeof(address);
@@ -133,7 +133,7 @@ int main(){
         );
 
         if (thread == NULL) {
-            error("Failed to create thread: %d", GetLastError());
+            error("Failed to create thread: %lu", GetLastError());
             free(client);
             closesocket(*new_sock);
         }

@@ -1,9 +1,11 @@
 // server TCP
+#include <winsock2.h>
+#include <ws2tcpip.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <winsock2.h>
-#include <ws2tcpip.h>
+
 
 // Need to link with Ws2_32.lib
 #pragma comment(lib, "ws2_32.lib") 
@@ -18,13 +20,13 @@
 int main(){
     // initializing WinSock and variables 
     WSADATA wsaDATA;
-    int server_fd = NULL, new_socket = NULL;
+    SOCKET listen_socket, client_socket;  // renamed from server_fd and new_socket
     struct sockaddr_in address;
     char buffer[BUFFER_SIZE] = {0};
     int opt = 1;
     socklen_t addrlen = sizeof(address);
 
-    // initiates use of the Winsock DLL by a process
+    // initiates use of the Winsock
     if (WSAStartup(MAKEWORD(2,2), &wsaDATA) != 0)
     {
         error("WSAStartup failed with error: %d", WSAGetLastError());
@@ -41,8 +43,8 @@ int main(){
     okay("The Winsock 2.2 dll was found");
     
     //step 1: create a socket 
-    server_fd = socket(AF_INET,SOCK_STREAM,0);
-    if (server_fd == INVALID_SOCKET)
+    listen_socket = socket(AF_INET,SOCK_STREAM,0);  // renamed from server_fd
+    if (listen_socket == INVALID_SOCKET)
     {
         error("socket creation failed, error:%d",WSAGetLastError());
         WSACleanup();
@@ -50,42 +52,42 @@ int main(){
     }
     okay("Created the Socket");
     // step 2: setting socket options
-    setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, (const char*)&opt, sizeof(opt));
+    setsockopt(listen_socket, SOL_SOCKET, SO_REUSEADDR, (const char*)&opt, sizeof(opt));
     // step 3: bind
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY; // Bind to any address
     address.sin_port = htons(PORT);
     
-    if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) == SOCKET_ERROR)
+    if (bind(listen_socket, (struct sockaddr *)&address, sizeof(address)) == SOCKET_ERROR)
     {
         error("Bind failed with error: %d", WSAGetLastError());
-        closesocket(server_fd);
+        closesocket(listen_socket);
         WSACleanup();
         return EXIT_FAILURE;
     }
     okay("Socket bound to port %d", PORT);
     // step 4: listen
-    listen(server_fd, 3); // Listen for incoming connections, max 3 queued connections
+    listen(listen_socket, 3);
     // step 5: accept and reply
-    new_socket = accept(server_fd, (struct sockaddr*)&address, &addrlen);
-    if (new_socket == INVALID_SOCKET)
+    client_socket = accept(listen_socket, (struct sockaddr*)&address, &addrlen);
+    if (client_socket == INVALID_SOCKET)
     {
         error("Accept failed with error: %d", WSAGetLastError());
-        closesocket(server_fd);
+        closesocket(listen_socket);
         WSACleanup();
         return EXIT_FAILURE;
     }
-    int bytes_received = recv(new_socket, buffer, BUFFER_SIZE, 0);
+    int bytes_received = recv(client_socket, buffer, BUFFER_SIZE, 0);
     if (bytes_received == SOCKET_ERROR) {
         error("recv failed with error: %d", WSAGetLastError());
     } else {
         buffer[bytes_received] = '\0';
         okay("Kitten's message: %s", buffer);
-        send(new_socket, "Meow, Kitten ₍^. .^₎⟆ !", strlen("Meow, Kitten ₍^. .^₎⟆ !"), 0);
+        send(client_socket, "Meow, Kitten ₍^. .^₎⟆ !", strlen("Meow, Kitten ₍^. .^₎⟆ !"), 0);
     }
     // step 6: close
-    closesocket(new_socket);
-    closesocket(server_fd);
+    closesocket(client_socket);
+    closesocket(listen_socket);
     // cleanup
      WSACleanup();
 

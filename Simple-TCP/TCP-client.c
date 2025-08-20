@@ -16,7 +16,7 @@
 int main(){
     // initializing WinSock and variables 
     WSADATA wsaDATA;
-    int sock;
+    SOCKET client_socket = INVALID_SOCKET;
     struct sockaddr_in serv_addr;
     char buffer[1024] = {0};
     char *msg = "Meow, Master ₍^. .^₎⟆ !";
@@ -38,43 +38,43 @@ int main(){
     okay("The Winsock 2.2 dll was found");
 
     // step 1: Create a socket
-    sock = socket(AF_INET,SOCK_STREAM,0);
-     if (sock == INVALID_SOCKET)
+    client_socket = socket(AF_INET, SOCK_STREAM, 0);
+    if (client_socket == INVALID_SOCKET)
     {
-        error("socket creation failed (INVALID_SOCKET), error:%d",WSAGetLastError());
+        error("Socket creation failed (INVALID_SOCKET), error:%d", WSAGetLastError());
         WSACleanup();
         return EXIT_FAILURE;
     }
-    okay("Created the Socket");
+    okay("Created the client socket");
 
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(PORT);
-        int Result = InetPton(AF_INET, "127.0.0.1", &serv_addr.sin_addr);
+    serv_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
 
-    if (Result == -1)
+    if (serv_addr.sin_addr.s_addr == INADDR_NONE)
     {
-        error("Failed to performs the conversion of the IP address string, error:%d",WSAGetLastError());
-        closesocket(sock);
+        error("Invalid IP address");
+        closesocket(client_socket);
         WSACleanup();
         return EXIT_FAILURE;
     }
-    // step 2: Connect to the server
-    Result = connect(sock,(struct sockaddr *)&serv_addr,sizeof(serv_addr)); 
-    if (Result == SOCKET_ERROR)
+    // step 2: Connect to the servers
+    
+    if ( connect(client_socket, (struct sockaddr *)&serv_addr, sizeof(serv_addr))== SOCKET_ERROR)
     {
-        error("Connection failed, error:%d",WSAGetLastError());
-        closesocket(sock);
+        error("Connection failed, error:%d", WSAGetLastError());
+        closesocket(client_socket);
         WSACleanup();
         return EXIT_FAILURE;
     }
     okay("Connected to the server");
-    
-    // step 3: recv and send
-    send(sock,msg,strlen(msg),0);
-    recv(sock, buffer, 1024, 0);
-    okay("Daddy's reply: %s",buffer);
 
-    closesocket(sock);
+    // step 3: send and receive
+    send(client_socket, msg, strlen(msg), 0);
+    recv(client_socket, buffer, 1024, 0);
+    okay("Daddy's reply: %s", buffer);
+
+    closesocket(client_socket);
     WSACleanup();
-    return EXIT_FAILURE;
+    return EXIT_SUCCESS;
 }
