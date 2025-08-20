@@ -15,10 +15,34 @@
 #define error(msg,...) printf("[-]" msg "\n", ##__VA_ARGS__)
 #define info(msg,...) printf("[*]" msg "\n", ##__VA_ARGS__)
 
+void send_HTML(SOCKET ClientSocket, const char *Path){
+    FILE *file =fopen(Path,"r");
+    if (!file) {
+        perror("Failed to open HTML file");
+        return;
+    }
+
+    char buffer[BUFFER_SIZE];
+    size_t bytes_read;
+    // send HTTP header
+    char *headers = "HTTP/1.1 200 OK\r\n"
+                    "Content-Type: text/html\r\n\r\n";
+    send(ClientSocket, headers,strlen(headers),0);
+     // Send HTML content
+    while ((bytes_read = fread(buffer, 1, BUFFER_SIZE, file)) > 0) {
+        send(ClientSocket, buffer, bytes_read, 0);
+    }
+    fclose(file);
+   return; 
+}
 int main(){
     // variables
     WSADATA wsaDATA; 
-    SOCKET listen_socket = INVALID_SOCKET;
+    SOCKET ListenSocket = INVALID_SOCKET, ClientSocket = INVALID_SOCKET;
+    struct sockaddr_in service,client_addr; // The socket address to be passed to bind
+    int iResult = SOCKET_ERROR;
+    socklen_t client_len = sizeof(client_addr);
+
     // initiates use of the Winsock
     if (WSAStartup(MAKEWORD(2,2), &wsaDATA) != 0)
     {
@@ -36,16 +60,57 @@ int main(){
     okay("The Winsock 2.2 dll was found");
     
     // creating a socket
-    // create a TCP socket
-    listen_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if (listen_socket == INVALID_SOCKET) {
-        error("Socket creation failed, error: %d", WSAGetLastError());
+    
+    ListenSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (ListenSocket == INVALID_SOCKET) {
+        error("Socket creation failed, error: %ld", WSAGetLastError());
         WSACleanup();
         return EXIT_FAILURE;
     }
     okay("Listening socket created");
-    // ...additional server setup and accept loop would go here...
-    closesocket(listen_socket);
+    // binding the socket
+    service.sin_family = AF_INET;
+    service.sin_addr.s_addr = INADDR_ANY;
+    service.sin_port = htons(PORT); 
+
+    iResult = bind(ListenSocket,(SOCKADDR*)&service,sizeof(service));
+    if (iResult == SOCKET_ERROR)
+    {
+        error("Bind failed with error: %ld",WSAGetLastError());
+
+        closesocket(ListenSocket);
+        WSACleanup();
+        return EXIT_FAILURE;
+    }
+    okay("bind returned sucess");
+
+    // listen for connections 
+    
+    if (listen(ListenSocket,5) == SOCKET_ERROR)
+    {
+        error("Listen function failed with error: %ld",WSAGetLastError());
+        closesocket(ListenSocket);
+        WSACleanup();
+        return EXIT_FAILURE;
+    }
+    info("listening to port %d...",PORT);
+
+    // accepting connections
+
+    ClientSocket = accept(ListenSocket,(struct sockaddr *)&client_addr,&client_len);
+    if (ClientSocket == INVALID_SOCKET)
+    {
+        error("Accept failed with error: %ld",WSAGetLastError());
+        closesocket(ListenSocket);
+        WSACleanup();
+        return EXIT_FAILURE;
+    }
+    info("Client connected: %s\n", inet_ntoa(client_addr.sin_addr));
+
+    // send http response
+
+    closesocket(ListenSocket);
     WSACleanup();
+    info("Client disconnected\n");
     return EXIT_SUCCESS;
 }
