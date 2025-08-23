@@ -6,30 +6,31 @@
 #include <ws2tcpip.h>
 
 // Need to link with Ws2_32.lib
-#pragma comment(lib, "ws2_32.lib") 
+#pragma comment(lib, "ws2_32.lib")
 
 #define PORT 9090
-#define okay(msg,...) printf("[+]" msg "\n", ##__VA_ARGS__)
-#define error(msg,...) printf("[-]" msg "\n", ##__VA_ARGS__)
-#define info(msg,...) printf("[*]" msg "\n", ##__VA_ARGS__)
+#define okay(msg, ...) printf("[+]" msg "\n", ##__VA_ARGS__)
+#define error(msg, ...) printf("[-]" msg "\n", ##__VA_ARGS__)
+#define info(msg, ...) printf("[*]" msg "\n", ##__VA_ARGS__)
 
-int main(){
-    // initializing WinSock and variables 
+int main()
+{
+    // initializing WinSock and variables
     WSADATA wsaDATA;
-    SOCKET client_socket = INVALID_SOCKET;
+    SOCKET socketClient = INVALID_SOCKET;
     struct sockaddr_in serv_addr;
     char buffer[1024] = {0};
     char *msg = "Meow, Master ₍^. .^₎⟆ !";
 
     // initiates use of the Winsock DLL by a process
-    if (WSAStartup(MAKEWORD(2,2), &wsaDATA) != 0)
+    if (WSAStartup(MAKEWORD(2, 2), &wsaDATA) != 0)
     {
         error("WSAStartup failed with error: %d", WSAGetLastError());
         return EXIT_FAILURE;
     }
 
-    //Confirm that the WinSock DLL supports 2.2.
-    if (LOBYTE(wsaDATA.wVersion)!=2 || HIBYTE(wsaDATA.wVersion)!=2)
+    // Confirm that the WinSock DLL supports 2.2.
+    if (LOBYTE(wsaDATA.wVersion) != 2 || HIBYTE(wsaDATA.wVersion) != 2)
     {
         error("Could not find a usable version of Winsock.dll");
         WSACleanup();
@@ -38,8 +39,8 @@ int main(){
     okay("The Winsock 2.2 dll was found");
 
     // step 1: Create a socket
-    client_socket = socket(AF_INET, SOCK_STREAM, 0);
-    if (client_socket == INVALID_SOCKET)
+    socketClient = socket(AF_INET, SOCK_STREAM, 0);
+    if (socketClient == INVALID_SOCKET)
     {
         error("Socket creation failed (INVALID_SOCKET), error:%d", WSAGetLastError());
         WSACleanup();
@@ -54,27 +55,27 @@ int main(){
     if (serv_addr.sin_addr.s_addr == INADDR_NONE)
     {
         error("Invalid IP address");
-        closesocket(client_socket);
+        closesocket(socketClient);
         WSACleanup();
         return EXIT_FAILURE;
     }
     // step 2: Connect to the servers
-    
-    if ( connect(client_socket, (struct sockaddr *)&serv_addr, sizeof(serv_addr))== SOCKET_ERROR)
+
+    if (connect(socketClient, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) == SOCKET_ERROR)
     {
         error("Connection failed, error:%d", WSAGetLastError());
-        closesocket(client_socket);
+        closesocket(socketClient);
         WSACleanup();
         return EXIT_FAILURE;
     }
     okay("Connected to the server");
 
     // step 3: send and receive
-    send(client_socket, msg, strlen(msg), 0);
-    recv(client_socket, buffer, 1024, 0);
+    send(socketClient, msg, strlen(msg), 0);
+    recv(socketClient, buffer, 1024, 0);
     okay("Daddy's reply: %s", buffer);
 
-    closesocket(client_socket);
+    closesocket(socketClient);
     WSACleanup();
     return EXIT_SUCCESS;
 }
