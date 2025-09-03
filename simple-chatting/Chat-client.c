@@ -8,7 +8,9 @@
 
 // Need to link with Ws2_32.lib
 #pragma comment(lib, "ws2_32.lib")
+#define IP "1.1.1.1"
 #define PORT 80
+#define BUFFER_SIZE 2048
 #define okay(msg, ...) printf("[+]" msg "\n", ##__VA_ARGS__)
 #define error(msg, ...) printf("[-]" msg "\n", ##__VA_ARGS__)
 #define info(msg, ...) printf("[*]" msg "\n", ##__VA_ARGS__)
@@ -31,22 +33,33 @@ int main()
         return EXIT_FAILURE;
     }
     okay("Created the client socket");
-
-    char* ip ="142.250.31.27";
-    struct sockaddr_in address;
+    info("trying to connect");
+    struct sockaddr_in address;;
     address.sin_family = AF_INET;
     address.sin_port = htons(PORT);
-    inet_pton(AF_INET, ip, &address.sin_addr);
+    address.sin_addr.s_addr = inet_addr(IP);
 
     int iResult = connect(socketFD, (struct sockaddr *)&address, sizeof(address));
     if (iResult == SOCKET_ERROR)
     {
-        error("Connection failed, error:%d", WSAGetLastError());
+        error("Connection failed, with ip: %s and PORT: %d error: %d", IP, PORT, WSAGetLastError());
         closesocket(socketFD);
         WSACleanup();
         return EXIT_FAILURE;
     }
-    okay("connected to server");
+    okay("connected to server with ip: %s and PORT: %d",IP,PORT);
+
+    info("sending and receiving");
+    char*  buffer = "GET / HTTP/1.1\r\n"
+    "Host: example.com\r\n"
+    "Connection: close\r\n"
+    "\r\n";
+    send(socketFD, buffer, strlen(buffer), 0);
+    recv(socketFD, buffer, strlen(buffer), 0);
+
+    // cleanup
+    closesocket(socketFD);
+    WSACleanup();
 
     return EXIT_SUCCESS;
 }
