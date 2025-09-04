@@ -34,7 +34,8 @@ int main()
     }
     okay("Created the client socket");
     info("trying to connect");
-    struct sockaddr_in address;;
+    struct sockaddr_in address;
+    ;
     address.sin_family = AF_INET;
     address.sin_port = htons(PORT);
     address.sin_addr.s_addr = inet_addr(IP);
@@ -47,16 +48,17 @@ int main()
         WSACleanup();
         return EXIT_FAILURE;
     }
-    okay("connected to server with ip: %s and PORT: %d",IP,PORT);
+    okay("connected to server with ip: %s and PORT: %d", IP, PORT);
 
     info("sending and receiving");
-    char*  buffer = "GET / HTTP/1.1\r\n"
-    "Host: example.com\r\n"
-    "Connection: close\r\n"
-    "\r\n";
+    char *buffer = "GET / HTTP/1.1\r\n"
+                   "Host: one.one.one.one\r\n"
+                   "Connection: close\r\n"
+                   "\r\n";
     send(socketFD, buffer, strlen(buffer), 0);
     recv(socketFD, buffer, strlen(buffer), 0);
 
+    info("received data was: %s", buffer);
     // cleanup
     closesocket(socketFD);
     WSACleanup();
