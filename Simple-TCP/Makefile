@@ -1,6 +1,6 @@
-CC = gcc
-CFLAGS = -Wall -Wextra
-LIBS = -lws2_32
+CC=	gcc
+CFLAGS=	-Wall	-Wextra
+LIBS=	-lws2_32
 
 all: server client
 
