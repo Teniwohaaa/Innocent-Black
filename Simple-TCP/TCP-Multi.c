@@ -21,7 +21,7 @@
 // struct for every client
 typedef struct
 {
-    int socket;
+    SOCKET socket;
     int id;
 } ClientData;
 
@@ -32,39 +32,33 @@ DWORD WINAPI handle_client(LPVOID lpParam)
     char buffer[BUFFER_SIZE] = {0};
     // Created client socket
     ClientData client = *(ClientData *)lpParam;
-    int sock_client = client.socket;
-    int Client_Id = client.id;
+    int bytes = recv(client.socket, buffer, sizeof(buffer), 0);
     // Receive message from client
-    if (recv(sock_client, buffer, sizeof(buffer), 0) == SOCKET_ERROR)
+    if (bytes == SOCKET_ERROR)
     {
         error("recv function failed with error: %d", WSAGetLastError());
-        return EXIT_FAILURE;
     }
     // if client exists:
-    info("Kitten number %d said: %s", Client_Id, buffer);
+    info("Kitten number %d said: %s", client.id, buffer);
     // threaded server response
-    send(sock_client, "Meow, Kitten ₍^. .^₎⟆ !", strlen("Meow, Kitten ₍^. .^₎⟆ !"), 0);
-    closesocket(sock_client);
+    send(client.socket, "Meow, Kitten ₍^. .^₎⟆ !", strlen("Meow, Kitten ₍^. .^₎⟆ !"), 0);
+    closesocket(client.socket);
     free(lpParam);
     return 0;
 }
 
-DWORD WINAPI serverSend(LPVOID lpParam)
-{
-    // Created client socket
-    int sock_client = *(int *)lpParam;
-    send(sock_client, "Meow, Kitten ₍^. .^₎⟆ !", strlen("Meow, Kitten ₍^. .^₎⟆ !"), 0);
-    return 0;
-}
+// DWORD WINAPI serverSend(LPVOID lpParam)
+// {
 
-int main()
+//     int sock_client = *(int *)lpParam;
+//     send(sock_client, "Meow, Kitten ₍^. .^₎⟆ !", strlen("Meow, Kitten ₍^. .^₎⟆ !"), 0);
+//     return 0;
+// }
+
+int main(void)
 {
-    // variables
     WSADATA wsaDATA;
     SOCKET server_fd = INVALID_SOCKET;
-    struct sockaddr_in address;
-    int opt = 1;
-    socklen_t addrlen = sizeof(address);
 
     // initiates use of the Winsock DLL by a process
     if (WSAStartup(MAKEWORD(2, 2), &wsaDATA) != 0)
@@ -80,7 +74,7 @@ int main()
         WSACleanup();
         return EXIT_FAILURE;
     }
-    okay("The Winsock 2.2 dll was found");
+    okay("Winsock 2.2 initilized");
 
     // making the server, creating the socket
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -90,17 +84,19 @@ int main()
         WSACleanup();
         return EXIT_FAILURE;
     }
-    okay("created the socket");
+    okay("Server socket created");
 
     // setting socket options:
+    int opt = 1;
     setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, (const char *)&opt, sizeof(opt));
     // binding
-    address.sin_family = AF_INET;
-    address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(PORT);
+    struct sockaddr_in server_addr;
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = INADDR_ANY;
+    server_addr.sin_port = htons(PORT);
 
     // If socket error occured:
-    if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) == SOCKET_ERROR)
+    if (bind(server_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) == SOCKET_ERROR)
     {
         error("Bind failed with error: %d", WSAGetLastError());
         closesocket(server_fd);
@@ -110,40 +106,42 @@ int main()
     okay("Socket bound to port %d", PORT);
 
     // listening :
-    if (listen(server_fd, 10))
+    if (listen(server_fd, 10) == SOCKET_ERROR)
     {
         error("Listen function failed with error: %d", WSAGetLastError());
         closesocket(server_fd);
         WSACleanup();
         return EXIT_FAILURE;
     }
-    info("Threaded server listening on port %d...", PORT);
+    info("Server listening on port %d...", PORT);
+    int client_id = 1;
     while (1)
     {
-        int *new_sock = malloc(sizeof(int));
-        *new_sock = accept(server_fd, (struct sockaddr *)&address, &addrlen);
-        static int i = 1;
+        struct sockaddr_in client_addr;
+        int addrlen = sizeof(client_addr);
+
+        SOCKET client_socket = accept(server_fd, (struct sockaddr *)&client_addr, &addrlen);
+        if (client_socket == INVALID_SOCKET)
+        {
+            error("Accept failed: %d", WSAGetLastError());
+            continue;
+        }
+
         ClientData *client = malloc(sizeof(ClientData));
-        client->id = i;
-        client->socket = *new_sock;
+        client->socket = client_socket;
+        client->id = client_id++;
 
-        HANDLE thread = CreateThread(
-            NULL,           // default security
-            0,              // default stack size
-            handle_client,  // function to run
-            (LPVOID)client, // parameter to pass
-            0,              // run immediately
-            NULL            // don't need the thread ID
-        );
-
+        HANDLE thread = CreateThread(NULL, 0, handle_client, client, 0, NULL);
         if (thread == NULL)
         {
-            error("Failed to create thread: %lu", GetLastError());
+            error("Thread creation failed: %lu", GetLastError());
+            closesocket(client_socket);
             free(client);
-            closesocket(*new_sock);
         }
-        free(new_sock);
-        i++;
+        else
+        {
+            CloseHandle(thread);
+        }
     }
     closesocket(server_fd);
     WSACleanup();
