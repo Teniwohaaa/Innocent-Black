@@ -43,7 +43,7 @@ int main()
     SOCKET socketFD = INVALID_SOCKET, socketClient = INVALID_SOCKET;
     struct sockaddr_in service, client_addr; // The socket address to be passed to bind
     int iResult = SOCKET_ERROR;
-    socklen_t client_len = sizeof(client_addr);
+    int client_len = sizeof(client_addr);
 
     // initiates use of the Winsock
     if (WSAStartup(MAKEWORD(2, 2), &wsaDATA) != 0)

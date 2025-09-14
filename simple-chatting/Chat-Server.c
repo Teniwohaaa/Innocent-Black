@@ -59,8 +59,19 @@ int main()
     return EXIT_FAILURE;
   }
   info(" server listening on port %d...", PORT);
-  struct sockaddr_in *ClientAddress;
-  socklen_t addrlen = sizeof(ClientAddress);
-  accept(socketServerFD, (struct sockaddr *)&ClientAddress, &addrlen);
+
+  struct sockaddr_in ClientAddress;
+  int addrlen = sizeof(ClientAddress);
+  info("Creating the socket for the client...");
+  SOCKET socketClient = accept(socketServerFD, (struct sockaddr *)&ClientAddress, &addrlen);
+  if (socketClient == INVALID_SOCKET)
+  {
+    error("Accept failed with error: %ld", WSAGetLastError());
+    closesocket(socketServerFD);
+    WSACleanup();
+    return EXIT_FAILURE;
+  }
+  okay("Client connected: %s\n", inet_ntoa(ClientAddress.sin_addr));
+
   return EXIT_SUCCESS;
 }
