@@ -28,8 +28,8 @@ int main()
     }
     okay("Created the client socket");
 
-    char *IP = "1.1.1.1";
-    int PORT = 80;
+    char *IP = "localhost";
+    int PORT = 2000;
     struct sockaddr_in address = CreateIPv4Address(IP, PORT);
 
     info("trying to connect...");

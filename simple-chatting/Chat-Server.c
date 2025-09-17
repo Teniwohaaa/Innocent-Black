@@ -63,15 +63,22 @@ int main()
   struct sockaddr_in ClientAddress;
   int addrlen = sizeof(ClientAddress);
   info("Creating the socket for the client...");
-  SOCKET socketClient = accept(socketServerFD, (struct sockaddr *)&ClientAddress, &addrlen);
-  if (socketClient == INVALID_SOCKET)
+  SOCKET socketClientFD = accept(socketServerFD, (struct sockaddr *)&ClientAddress, &addrlen);
+  if (socketClientFD == INVALID_SOCKET)
   {
-    error("Accept failed with error: %ld", WSAGetLastError());
+    error("Accept failed with error: %d", WSAGetLastError());
     closesocket(socketServerFD);
     WSACleanup();
     return EXIT_FAILURE;
   }
   okay("Client connected: %s\n", inet_ntoa(ClientAddress.sin_addr));
+
+  char buffer[BUFFER_SIZE];
+  recv(socketClientFD, buffer, BUFFER_SIZE, 0);
+  info("Response was: %s", buffer);
+
+  closesocket(socketServerFD);
+  WSACleanup();
 
   return EXIT_SUCCESS;
 }
