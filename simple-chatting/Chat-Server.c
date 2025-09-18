@@ -62,7 +62,7 @@ int main()
 
   struct sockaddr_in ClientAddress;
   int addrlen = sizeof(ClientAddress);
-  info("Creating the socket for the client...");
+  info("waiting for a connection...");
   SOCKET socketClientFD = accept(socketServerFD, (struct sockaddr *)&ClientAddress, &addrlen);
   if (socketClientFD == INVALID_SOCKET)
   {

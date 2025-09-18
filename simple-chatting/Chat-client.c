@@ -28,7 +28,7 @@ int main()
     }
     okay("Created the client socket");
 
-    char *IP = "localhost";
+    char *IP = "127.0.0.1";
     int PORT = 2000;
     struct sockaddr_in address = CreateIPv4Address(IP, PORT);
 
@@ -43,19 +43,20 @@ int main()
     }
     okay("connected to server with ip: %s and port: %d", IP, PORT);
 
-    char request[] = "GET / HTTP/1.1\r\n"
-                     "Host: one.one.one.one\r\n"
-                     "Connection: close\r\n"
-                     "\r\n";
+    char *LineBuffer = NULL;
+    int iLineSize = 0;
+    info("Type text (q to QUIT): ");
+    size_t CharCount = getline(&LineBuffer, &iLineSize, stdin);
 
-    send(socketFD, request, strlen(request), 0);
-
-    char response[BUFFER_SIZE];
-    int bytesReceived = recv(socketFD, response, BUFFER_SIZE - 1, 0);
-    if (bytesReceived > 0)
+    while (TRUE)
     {
-        response[bytesReceived] = '\0';
-        info("received data was: %s", response);
+        if (CharCount > 0)
+        {
+            if (strcmp(LineBuffer, "q") == 0)
+                break;
+
+            size_t iAmountSent = send(socketFD, LineBuffer, strlen(LineBuffer), 0);
+        }
     }
 
     closesocket(socketFD);
