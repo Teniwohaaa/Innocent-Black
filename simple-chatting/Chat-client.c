@@ -46,10 +46,10 @@ int main()
     char *LineBuffer = NULL;
     int iLineSize = 0;
     info("Type text (q to QUIT): ");
-    size_t CharCount = getline(&LineBuffer, &iLineSize, stdin);
 
     while (TRUE)
     {
+        size_t CharCount = getline(&LineBuffer, &iLineSize, stdin);
         if (CharCount > 0)
         {
             if (strcmp(LineBuffer, "q") == 0)

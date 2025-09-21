@@ -8,6 +8,43 @@
 #define error(msg, ...) printf("[-] " msg "\n", ##__VA_ARGS__)
 #define info(msg, ...) printf("[*] " msg "\n", ##__VA_ARGS__)
 
+struct AcceptedSocket
+{
+  SOCKET sockAcceptedFD;
+  struct sockaddr_in ClientAddress;
+  boolean bSuccess;
+  int iErrorCode;
+};
+
+struct AcceptedSocket *AcceptIncomingConnection(SOCKET socketServerFD)
+{
+  struct AcceptedSocket *socketClient = malloc(sizeof(*socketClient));
+  if (!socketClient)
+  {
+    error("Memory allocation failed for AcceptedSocket");
+    return NULL;
+  }
+  // initializing the struct
+  socketClient->bSuccess = FALSE;
+  socketClient->sockAcceptedFD = INVALID_SOCKET;
+  socketClient->iErrorCode = 0;
+
+  int addrlen = sizeof(socketClient->ClientAddress);
+  info("waiting for a connection...");
+
+  socketClient->sockAcceptedFD = accept(socketServerFD, (struct sockaddr *)&socketClient->ClientAddress, &addrlen);
+
+  if (socketClient->sockAcceptedFD == INVALID_SOCKET)
+  {
+    socketClient->iErrorCode = WSAGetLastError();
+    error("accept() failed with error: %d", socketClient->iErrorCode);
+    free(socketClient);
+    return NULL;
+  }
+  socketClient->bSuccess = TRUE;
+  return socketClient;
+}
+
 int main()
 {
   // Starting the windows socket api
@@ -34,13 +71,13 @@ int main()
     WSACleanup();
     return EXIT_FAILURE;
   }
-  okay("Created the client socket");
+  okay("Created the server socket");
 
   // creating the adress to bind for listening
   struct sockaddr_in address_server = CreateIPv4Address("", PORT);
-  okay("Created the @");
+  okay("Created the server address");
 
-  // binding the socket and @
+  // binding the socket and address
   if (bind(socketServerFD, (struct sockaddr *)&address_server, sizeof(address_server)) == SOCKET_ERROR)
   {
     error("Bind failed with error: %d", WSAGetLastError());
@@ -51,33 +88,50 @@ int main()
   okay("Socket bound to port %d", PORT);
 
   // Lisntening
-  if (listen(socketServerFD, 3))
+  if (listen(socketServerFD, 3) == SOCKET_ERROR)
   {
     error("Listen function failed with error: %d", WSAGetLastError());
     closesocket(socketServerFD);
     WSACleanup();
     return EXIT_FAILURE;
   }
-  info(" server listening on port %d...", PORT);
+  info("server listening on port %d...", PORT);
 
-  struct sockaddr_in ClientAddress;
-  int addrlen = sizeof(ClientAddress);
-  info("waiting for a connection...");
-  SOCKET socketClientFD = accept(socketServerFD, (struct sockaddr *)&ClientAddress, &addrlen);
-  if (socketClientFD == INVALID_SOCKET)
+  struct AcceptedSocket *socketClient = AcceptIncomingConnection(socketServerFD);
+  if (socketClient == NULL)
   {
-    error("Accept failed with error: %d", WSAGetLastError());
+    error("Accept failed");
     closesocket(socketServerFD);
     WSACleanup();
     return EXIT_FAILURE;
   }
-  okay("Client connected: %s\n", inet_ntoa(ClientAddress.sin_addr));
+  okay("Client connected: %s", inet_ntoa(socketClient->ClientAddress.sin_addr));
 
   char buffer[BUFFER_SIZE];
-  recv(socketClientFD, buffer, BUFFER_SIZE, 0);
-  info("Response was: %s", buffer);
 
+  while (TRUE)
+  {
+    ssize_t AmountR = recv(socketClient->sockAcceptedFD, buffer, BUFFER_SIZE, 0);
+    if (AmountR > 0)
+    {
+      buffer[AmountR] = 0;
+      info("Received: %s", buffer);
+    }
+    else if (AmountR == 0)
+    {
+      info("Client disconnected");
+      break;
+    }
+    else
+    {
+      error("recv failed with error: %d", WSAGetLastError());
+      break;
+    }
+  }
+
+  closesocket(socketClient->sockAcceptedFD);
   closesocket(socketServerFD);
+  free(socketClient);
   WSACleanup();
 
   return EXIT_SUCCESS;
