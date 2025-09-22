@@ -10,7 +10,6 @@ typedef intptr_t ssize_t;
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 SOCKET CreateSocketTCPIPv4(void)
 {
     return socket(AF_INET, SOCK_STREAM, 0);
